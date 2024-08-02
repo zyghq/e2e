@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { faker } from "@faker-js/faker";
 
+const TEST_WORKSPACE_ID = process.env.TEST_WORKSPACE_ID;
+
 test("server ok", async ({ request }) => {
   const response = await request.get("/");
   expect(response.ok()).toBeTruthy();
@@ -549,4 +551,23 @@ test.describe("create workspace with a secret key", () => {
 
     expect(body.secretKey).toBe(secretKey);
   });
+});
+
+test("create secret key for test workspace", async ({ request }) => {
+  expect(TEST_WORKSPACE_ID).toBeTruthy();
+  const response = await request.post(`/workspaces/${TEST_WORKSPACE_ID}/sk/`, {
+    data: {},
+  });
+
+  expect(response.status()).toBe(201);
+
+  const body = await response.json();
+  expect(body.secretKey).toBeTruthy();
+  expect(body.createdAt).toBeTruthy();
+  expect(body.updatedAt).toBeTruthy();
+
+  expect(body).not.toHaveProperty("workspaceId");
+
+  const keys = Object.keys(body);
+  expect(keys.length).toBe(3);
 });
