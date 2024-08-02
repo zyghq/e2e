@@ -1,8 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { faker } from "@faker-js/faker";
 
-const TEST_WORKSPACE_ID = process.env.TEST_WORKSPACE_ID;
-
 test("server ok", async ({ request }) => {
   const response = await request.get("/");
   expect(response.ok()).toBeTruthy();
@@ -64,6 +62,11 @@ test.describe("create workspace with member flow", () => {
     expect(body.updatedAt).toBeTruthy();
 
     expect(body.role).toBe("primary");
+
+    expect(body).not.toHaveProperty("workspaceId");
+
+    const keys = Object.keys(body);
+    expect(keys.length).toBe(5);
   });
 
   test("check all the members with atleast 1 primary", async ({ request }) => {
@@ -85,6 +88,11 @@ test.describe("create workspace with member flow", () => {
       expect(member.role).toBeTruthy();
       expect(member.createdAt).toBeTruthy();
       expect(member.updatedAt).toBeTruthy();
+
+      expect(member).not.toHaveProperty("workspaceId");
+
+      const keys = Object.keys(member);
+      expect(keys.length).toBe(5);
     }
     expect(hasPrimaryMember).toBe(true);
     expect(primaryMemberCount).toBe(1);
@@ -140,11 +148,17 @@ test.describe("create workspace with customer flow", () => {
     expect(body.email).toBe(email);
     expect(body.createdAt).toBeTruthy();
     expect(body.updatedAt).toBeTruthy();
-
     expect(body.externalId).toBeNull();
     expect(body.phone).toBeNull();
+    expect(body.role).toBeTruthy();
     expect(body.isVerified).toBeTruthy();
+
     expect(body.role).toBe("engaged");
+    expect(body).not.toHaveProperty("workspaceId");
+
+    const keys = Object.keys(body);
+    expect(keys.length).toBe(9);
+
     createdCustomerIdForEmail = body.customerId;
   });
 
@@ -170,11 +184,17 @@ test.describe("create workspace with customer flow", () => {
     expect(body.email).toBeNull();
     expect(body.createdAt).toBeTruthy();
     expect(body.updatedAt).toBeTruthy();
-
     expect(body.externalId).toBe(externalId);
     expect(body.phone).toBeNull();
+    expect(body.role).toBeTruthy();
     expect(body.isVerified).toBeTruthy();
+
     expect(body.role).toBe("engaged");
+    expect(body).not.toHaveProperty("workspaceId");
+
+    const keys = Object.keys(body);
+    expect(keys.length).toBe(9);
+
     createdCustomerIdForExternalId = body.customerId;
   });
 
@@ -195,16 +215,23 @@ test.describe("create workspace with customer flow", () => {
     expect(response.status()).toBe(201);
 
     const body = await response.json();
+
     expect(body.customerId).toBeTruthy();
     expect(body.name).toBe(name);
     expect(body.email).toBeNull();
     expect(body.createdAt).toBeTruthy();
     expect(body.updatedAt).toBeTruthy();
-
     expect(body.externalId).toBeNull();
     expect(body.phone).toBe(phone);
+    expect(body.role).toBeTruthy();
     expect(body.isVerified).toBeTruthy();
+
     expect(body.role).toBe("engaged");
+    expect(body).not.toHaveProperty("workspaceId");
+
+    const keys = Object.keys(body);
+    expect(keys.length).toBe(9);
+
     createdCustomerIdForPhone = body.customerId;
   });
 
@@ -231,6 +258,11 @@ test.describe("create workspace with customer flow", () => {
       expect(customer).toHaveProperty("email");
       expect(customer).toHaveProperty("phone");
       expect(customer).toHaveProperty("externalId");
+
+      expect(customer).not.toHaveProperty("workspaceId");
+
+      const keys = Object.keys(customer);
+      expect(keys.length).toBe(9);
 
       if (customer.customerId === createdCustomerIdForExternalId) {
         hasCustomerWithExternalId = true;
@@ -275,12 +307,16 @@ test.describe("create workspace with customer flow", () => {
     expect(body.name).toBe(name);
     expect(body.createdAt).toBeTruthy();
     expect(body.updatedAt).toBeTruthy();
-
     expect(body.externalId).toBe(externalId);
     expect(body.email).toBeNull();
     expect(body.phone).toBeNull();
     expect(body.isVerified).toBeTruthy();
     expect(body.role).toBe("engaged");
+
+    expect(body).not.toHaveProperty("workspaceId");
+
+    const keys = Object.keys(body);
+    expect(keys.length).toBe(9);
   });
 
   test("create customer with email, phone", async ({ request }) => {
@@ -312,6 +348,11 @@ test.describe("create workspace with customer flow", () => {
     expect(body.phone).toBeNull();
     expect(body.isVerified).toBeTruthy();
     expect(body.role).toBe("engaged");
+
+    expect(body).not.toHaveProperty("workspaceId");
+
+    const keys = Object.keys(body);
+    expect(keys.length).toBe(9);
   });
 
   test("create customer with phone only", async ({ request }) => {
@@ -340,5 +381,9 @@ test.describe("create workspace with customer flow", () => {
     expect(body.phone).toBe(phone);
     expect(body.isVerified).toBeTruthy();
     expect(body.role).toBe("engaged");
+
+    expect(body).not.toHaveProperty("workspaceId");
+    const keys = Object.keys(body);
+    expect(keys.length).toBe(9);
   });
 });
