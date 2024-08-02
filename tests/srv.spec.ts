@@ -482,3 +482,71 @@ test.describe("create workspace with the fancy widget", () => {
     expect(hasFancyWidget).toBeTruthy();
   });
 });
+
+test.describe("create workspace with a secret key", () => {
+  test.describe.configure({ mode: "serial" });
+
+  const workspaceName = faker.commerce.department() + " " + "Space";
+  let workspaceId: string;
+  let secretKey: string;
+
+  test("create the workspace", async ({ request }) => {
+    const data = {
+      name: workspaceName,
+    };
+    const workspaceResponse = await request.post("/workspaces/", {
+      data,
+    });
+    expect(workspaceResponse.ok()).toBeTruthy();
+    expect(workspaceResponse.status()).toBe(201);
+
+    const workspaceRespBody = await workspaceResponse.json();
+    expect(workspaceRespBody.workspaceId).toBeTruthy();
+    expect(workspaceRespBody.name).toBe(workspaceName); // make sure we got the name we sent
+    expect(workspaceRespBody.createdAt).toBeTruthy();
+    expect(workspaceRespBody.updatedAt).toBeTruthy();
+
+    const keys = Object.keys(workspaceRespBody);
+    expect(keys.length).toBe(4);
+
+    workspaceId = workspaceRespBody.workspaceId;
+  });
+
+  test("create a secret key", async ({ request }) => {
+    const data = {};
+    const response = await request.post(`/workspaces/${workspaceId}/sk/`, {
+      data,
+    });
+    expect(response.ok()).toBeTruthy();
+    expect(response.status()).toBe(201);
+
+    const body = await response.json();
+    expect(body.secretKey).toBeTruthy();
+    expect(body.createdAt).toBeTruthy();
+    expect(body.updatedAt).toBeTruthy();
+
+    expect(body).not.toHaveProperty("workspaceId");
+
+    const keys = Object.keys(body);
+    expect(keys.length).toBe(3);
+    secretKey = body.secretKey;
+  });
+
+  test("check the created secret key", async ({ request }) => {
+    const response = await request.get(`/workspaces/${workspaceId}/sk/`);
+    expect(response.ok()).toBeTruthy();
+    expect(response.status()).toBe(200);
+
+    const body = await response.json();
+    expect(body.secretKey).toBeTruthy();
+    expect(body.createdAt).toBeTruthy();
+    expect(body.updatedAt).toBeTruthy();
+
+    expect(body).not.toHaveProperty("workspaceId");
+
+    const keys = Object.keys(body);
+    expect(keys.length).toBe(3);
+
+    expect(body.secretKey).toBe(secretKey);
+  });
+});
