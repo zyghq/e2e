@@ -20,6 +20,9 @@ test("list of workspaces where user is a member", async ({ request }) => {
     expect(workspace.name).toBeTruthy();
     expect(workspace.createdAt).toBeTruthy();
     expect(workspace.updatedAt).toBeTruthy();
+
+    const keys = Object.keys(workspace);
+    expect(keys.length).toBe(4);
   }
 });
 
@@ -385,5 +388,97 @@ test.describe("create workspace with customer flow", () => {
     expect(body).not.toHaveProperty("workspaceId");
     const keys = Object.keys(body);
     expect(keys.length).toBe(9);
+  });
+});
+
+test.describe("create workspace with the fancy widget", () => {
+  test.describe.configure({ mode: "serial" });
+
+  const workspaceName = faker.commerce.department() + " " + "Space";
+  let workspaceId: string;
+  let fancyWidgetId: string;
+  let fancyCreatedWidgetName: string;
+
+  test("create the workspace", async ({ request }) => {
+    const data = {
+      name: workspaceName,
+    };
+    const workspaceResponse = await request.post("/workspaces/", {
+      data,
+    });
+    expect(workspaceResponse.ok()).toBeTruthy();
+    expect(workspaceResponse.status()).toBe(201);
+
+    const workspaceRespBody = await workspaceResponse.json();
+    expect(workspaceRespBody.workspaceId).toBeTruthy();
+    expect(workspaceRespBody.name).toBe(workspaceName); // make sure we got the name we sent
+    expect(workspaceRespBody.createdAt).toBeTruthy();
+    expect(workspaceRespBody.updatedAt).toBeTruthy();
+    workspaceId = workspaceRespBody.workspaceId;
+  });
+
+  test("create fancy widget for workspace", async ({ request }) => {
+    const fancyWidgetName = faker.commerce.department() + " " + "Widget";
+    const data = {
+      name: fancyWidgetName,
+      configuration: {
+        position: "right",
+      },
+    };
+
+    const response = await request.post(`/workspaces/${workspaceId}/widgets/`, {
+      data,
+    });
+    expect(response.ok()).toBeTruthy();
+    expect(response.status()).toBe(201);
+
+    const body = await response.json();
+    expect(body.widgetId).toBeTruthy();
+    expect(body.name).toBe(fancyWidgetName);
+    expect(body.createdAt).toBeTruthy();
+    expect(body.updatedAt).toBeTruthy();
+    expect(body.configuration).toBeTruthy();
+
+    expect(body.configuration.position).toBe("right");
+    expect(body).not.toHaveProperty("workspaceId");
+
+    const keys = Object.keys(body);
+    expect(keys.length).toBe(5);
+
+    fancyWidgetId = body.widgetId;
+    fancyCreatedWidgetName = body.name;
+  });
+
+  test("check list of widgets that were created", async ({ request }) => {
+    const response = await request.get(`/workspaces/${workspaceId}/widgets/`);
+    expect(response.ok()).toBeTruthy();
+    expect(response.status()).toBe(200);
+
+    const body = await response.json();
+
+    let hasFancyWidget = false;
+
+    expect(body.length).toBe(1);
+    for (const widget of body) {
+      expect(widget.widgetId).toBeTruthy();
+      expect(widget.name).toBeTruthy();
+      expect(widget.createdAt).toBeTruthy();
+      expect(widget.updatedAt).toBeTruthy();
+      expect(widget.configuration).toBeTruthy();
+
+      expect(widget).not.toHaveProperty("workspaceId");
+
+      const keys = Object.keys(widget);
+      expect(keys.length).toBe(5);
+
+      if (
+        widget.name === fancyCreatedWidgetName &&
+        widget.widgetId === fancyWidgetId
+      ) {
+        hasFancyWidget = true;
+      }
+    }
+
+    expect(hasFancyWidget).toBeTruthy();
   });
 });
