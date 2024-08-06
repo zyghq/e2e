@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { faker } from "@faker-js/faker";
+import { describe } from "node:test";
 
 const TEST_WORKSPACE_ID = process.env.TEST_WORKSPACE_ID;
 
@@ -9,6 +10,64 @@ test("server ok", async ({ request }) => {
   expect(response.status()).toBe(200);
   const text = await response.text();
   expect(text).toBe("ok");
+});
+
+test.describe("check test workpace and update the namme of the workspace", () => {
+  test.describe.configure({ mode: "serial" });
+  let workspaceId: string;
+  let workspaceUpdatedName = faker.commerce.department() + " " + "Modified";
+
+  test("check test workspace exists", async ({ request }) => {
+    expect(TEST_WORKSPACE_ID).toBeTruthy();
+
+    const response = await request.get(`/workspaces/${TEST_WORKSPACE_ID}/`);
+    expect(response.status()).toBe(200);
+
+    const body = await response.json();
+    expect(body.workspaceId).toBeTruthy();
+    expect(body.name).toBeTruthy();
+    expect(body.createdAt).toBeTruthy();
+    expect(body.updatedAt).toBeTruthy();
+
+    const keys = Object.keys(body);
+    expect(keys.length).toBe(4);
+
+    workspaceId = body.workspaceId;
+  });
+
+  test("update the name of the workspace", async ({ request }) => {
+    const data = {
+      name: workspaceUpdatedName,
+    };
+    const response = await request.patch(`/workspaces/${workspaceId}/`, {
+      data,
+    });
+    expect(response.status()).toBe(200);
+
+    const body = await response.json();
+
+    expect(body.workspaceId).toBeTruthy();
+    expect(body.name).toBe(workspaceUpdatedName);
+    expect(body.createdAt).toBeTruthy();
+    expect(body.updatedAt).toBeTruthy();
+
+    const keys = Object.keys(body);
+    expect(keys.length).toBe(4);
+  });
+
+  test("check the name of the workspace after update", async ({ request }) => {
+    const response = await request.get(`/workspaces/${workspaceId}/`);
+    expect(response.status()).toBe(200);
+
+    const body = await response.json();
+    expect(body.workspaceId).toBeTruthy();
+    expect(body.name).toBe(workspaceUpdatedName);
+    expect(body.createdAt).toBeTruthy();
+    expect(body.updatedAt).toBeTruthy();
+
+    const keys = Object.keys(body);
+    expect(keys.length).toBe(4);
+  });
 });
 
 test("list of workspaces where user is a member", async ({ request }) => {
@@ -26,6 +85,53 @@ test("list of workspaces where user is a member", async ({ request }) => {
     const keys = Object.keys(workspace);
     expect(keys.length).toBe(4);
   }
+});
+
+describe("workspace members with random member check", () => {
+  test.describe.configure({ mode: "serial" });
+  let memberId: string;
+  let memberName: string;
+  test("check members with random member", async ({ request }) => {
+    const response = await request.get(
+      `/workspaces/${TEST_WORKSPACE_ID}/members/`
+    );
+    expect(response.status()).toBe(200);
+
+    const items = await response.json();
+
+    for (const item of items) {
+      expect(item.memberId).toBeTruthy();
+      expect(item.name).toBeTruthy();
+      expect(item.role).toBeTruthy();
+      expect(item.createdAt).toBeTruthy();
+      expect(item.updatedAt).toBeTruthy();
+
+      expect(item).not.toHaveProperty("workspaceId");
+
+      const keys = Object.keys(item);
+      expect(keys.length).toBe(5);
+    }
+
+    const member = items[0];
+    memberId = member.memberId;
+    memberName = member.name;
+  });
+
+  test("check member in workspace", async ({ request }) => {
+    const response = await request.get(
+      `/workspaces/${TEST_WORKSPACE_ID}/members/${memberId}/`
+    );
+
+    expect(response.status()).toBe(200);
+    const member = await response.json();
+
+    expect(member.memberId).toBe(memberId);
+    expect(member.name).toBe(memberName);
+
+    expect(member.role).toBeTruthy();
+    expect(member.createdAt).toBeTruthy();
+    expect(member.updatedAt).toBeTruthy();
+  });
 });
 
 test.describe("create workspace with member flow", () => {
