@@ -4,9 +4,9 @@ import { faker } from "@faker-js/faker";
 const baseUrl = process.env.ZYG_XSRV_URL;
 
 const TEST_WORKSPACE_ID = process.env.TEST_WORKSPACE_ID;
-
 const TEST_WIDGET_ID = process.env.TEST_WIDGET_ID;
 
+// query
 test("server ok", async ({ request }) => {
   const response = await request.get(`${baseUrl}/`);
   expect(response.ok()).toBeTruthy();
@@ -15,6 +15,7 @@ test("server ok", async ({ request }) => {
   expect(text).toBe("ok");
 });
 
+// mutation
 test.describe("init workspace widget", () => {
   test.describe.configure({ mode: "serial" });
   test("init anonymous customer widget with name only", async ({ request }) => {
@@ -173,6 +174,7 @@ test.describe("init workspace widget", () => {
   });
 });
 
+// mutation
 test.describe("init workspace with customer flow", () => {
   test.describe.configure({ mode: "serial" });
   let customerJwt: string;
