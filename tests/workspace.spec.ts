@@ -896,4 +896,65 @@ test.describe("query thread and update randomly selected thread properties", () 
       expect(thread.egressLastSeq).toBeTruthy();
     }
   });
+
+  test("test assignment for randomly selected thread", async ({ request }) => {
+    // get my membership
+    let memberId: string;
+    const response = await request.get(
+      `/workspaces/${TEST_WORKSPACE_ID}/members/me/`
+    );
+    expect(response.status()).toBe(200);
+
+    const body = await response.json();
+    memberId = body.memberId;
+
+    const data = {
+      assignee: memberId,
+    };
+    const response2 = await request.patch(
+      `/workspaces/${TEST_WORKSPACE_ID}/threads/chat/${randomThreadId}/`,
+      {
+        data,
+        headers: {
+          Authorization: `Bearer ${JWT}`,
+        },
+      }
+    );
+
+    const thread = await response2.json();
+    expect(thread.threadId).toBeTruthy();
+    expect(thread.customer.customerId).toBeTruthy();
+    expect(thread.customer.name).toBeTruthy();
+    expect(thread).toHaveProperty("title");
+    expect(thread).toHaveProperty("description");
+    expect(thread).toHaveProperty("sequence");
+    expect(thread.status).toBeTruthy();
+    expect(thread).toHaveProperty("read");
+    expect(thread).toHaveProperty("replied");
+    expect(thread).toHaveProperty("spam");
+    expect(thread.priority).toBeTruthy();
+    expect(thread).toHaveProperty("channel");
+    expect(thread).toHaveProperty("previewText");
+    expect(thread).toHaveProperty("assignee");
+    expect(thread).toHaveProperty("ingressCustomer");
+    expect(thread).toHaveProperty("createdAt");
+    expect(thread).toHaveProperty("updatedAt");
+
+    expect(thread.assignee.memberId).toBe(memberId);
+    expect(thread.assignee.name).toBeTruthy();
+
+    if (thread.ingressCustomer) {
+      expect(thread.ingressCustomer.customerId).toBeTruthy();
+      expect(thread.ingressCustomer.name).toBeTruthy();
+      expect(thread.ingressFirstSeq).toBeTruthy();
+      expect(thread.ingressLastSeq).toBeTruthy();
+    }
+
+    if (thread.egressMembers) {
+      expect(thread.egresssMember.memberId).toBeTruthy();
+      expect(thread.egresssMember.name).toBeTruthy();
+      expect(thread.egressFirstSeq).toBeTruthy();
+      expect(thread.egressLastSeq).toBeTruthy();
+    }
+  });
 });
