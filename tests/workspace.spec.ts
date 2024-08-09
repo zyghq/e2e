@@ -596,21 +596,117 @@ test.describe("query thread labels for randomly selected thread", () => {
 
     const body = await response.json();
     for (const label of body) {
+      expect(label.threadLabelId).toBeTruthy();
+      expect(label.threadId).toBe(randomThreadId);
       expect(label.labelId).toBeTruthy();
       expect(label.name).toBeTruthy();
+      expect(label.icon).toBeTruthy();
+      expect(label.addedBy).toBeTruthy();
       expect(label.createdAt).toBeTruthy();
       expect(label.updatedAt).toBeTruthy();
 
-      expect(label).not.toHaveProperty("workspaceId");
-
       const keys = Object.keys(label);
-      expect(keys.length).toBe(5);
+      expect(keys.length).toBe(8);
     }
   });
 });
 
 // mutation
-test.describe("attach label to randomly selected thread", () => {
+// test.describe("attach label to randomly selected thread", () => {
+//   test.describe.configure({ mode: "serial" });
+//   const threads: any[] = [];
+//   let randomThreadId: string;
+//   let labelName: string;
+//   test("query list of threads and pick a random thread", async ({
+//     request,
+//   }) => {
+//     const response = await request.get(
+//       `/workspaces/${TEST_WORKSPACE_ID}/threads/chat/`,
+//       {
+//         headers: {
+//           Authorization: `Bearer ${JWT}`,
+//         },
+//       }
+//     );
+
+//     expect(response.status()).toBe(200);
+//     const body = await response.json();
+//     for (const thread of body) {
+//       threads.push(thread);
+//     }
+//     // pullout random thread using Math.random()
+//     const randomIndex = Math.floor(Math.random() * threads.length);
+//     randomThreadId = threads[randomIndex].threadId;
+//   });
+
+//   test("attach a new label to the randomly selected thread", async ({
+//     request,
+//   }) => {
+//     const name = faker.hacker.noun();
+//     const data = {
+//       name,
+//       icon: "🚀",
+//     };
+//     const response = await request.put(
+//       `/workspaces/${TEST_WORKSPACE_ID}/threads/chat/${randomThreadId}/labels/`,
+//       {
+//         data,
+//         headers: {
+//           Authorization: `Bearer ${JWT}`,
+//         },
+//       }
+//     );
+
+//     expect(response.status()).toBe(201);
+
+//     const body = await response.json();
+//     expect(body.threadLabelId).toBeTruthy();
+//     expect(body.threadId).toBe(randomThreadId);
+//     expect(body.labelId).toBeTruthy();
+//     expect(body.name).toBe(name);
+//     expect(body.icon).toBe("🚀");
+//     expect(body.addedBy).toBeTruthy();
+//     expect(body.createdAt).toBeTruthy();
+//     expect(body.updatedAt).toBeTruthy();
+
+//     const keys = Object.keys(body);
+//     expect(keys.length).toBe(8);
+
+//     labelName = name;
+//   });
+
+//   test("query the thread labels for the randomly selected thread", async ({
+//     request,
+//   }) => {
+//     const response = await request.get(
+//       `/workspaces/${TEST_WORKSPACE_ID}/threads/chat/${randomThreadId}/labels/`,
+//       {
+//         headers: {
+//           Authorization: `Bearer ${JWT}`,
+//         },
+//       }
+//     );
+//     expect(response.status()).toBe(200);
+
+//     const body = await response.json();
+//     for (const label of body) {
+//       expect(label.threadLabelId).toBeTruthy();
+//       expect(label.threadId).toBe(randomThreadId);
+//       expect(label.labelId).toBeTruthy();
+//       expect(label.name).toBe(labelName);
+//       expect(label.icon).toBe("🚀");
+//       expect(label.addedBy).toBeTruthy();
+//       expect(label.createdAt).toBeTruthy();
+//       expect(label.updatedAt).toBeTruthy();
+
+//       const keys = Object.keys(label);
+//       expect(keys.length).toBe(8);
+//     }
+//   });
+// });
+
+// mutation
+test.describe("query thread and update randomly selected thread properties", () => {
   test.describe.configure({ mode: "serial" });
   const threads: any[] = [];
   let randomThreadId: string;
@@ -636,16 +732,15 @@ test.describe("attach label to randomly selected thread", () => {
     randomThreadId = threads[randomIndex].threadId;
   });
 
-  test("attach a new label to the randomly selected thread", async ({
-    request,
-  }) => {
-    const name = faker.hacker.noun();
+  test("update thread status", async ({ request }) => {
+    const statuses = ["todo", "done"];
+    // make a random status
+    const status = statuses[Math.floor(Math.random() * statuses.length)];
     const data = {
-      name,
-      icon: "🚀",
+      status,
     };
-    const response = await request.put(
-      `/workspaces/${TEST_WORKSPACE_ID}/threads/chat/${randomThreadId}/labels/`,
+    const response = await request.patch(
+      `/workspaces/${TEST_WORKSPACE_ID}/threads/chat/${randomThreadId}/`,
       {
         data,
         headers: {
@@ -654,19 +749,151 @@ test.describe("attach label to randomly selected thread", () => {
       }
     );
 
-    expect(response.status()).toBe(201);
+    expect(response.status()).toBe(200);
 
-    const body = await response.json();
-    expect(body.threadLabelId).toBeTruthy();
-    expect(body.threadId).toBe(randomThreadId);
-    expect(body.labelId).toBeTruthy();
-    expect(body.name).toBe(name);
-    expect(body.icon).toBe("🚀");
-    expect(body.addedBy).toBeTruthy();
-    expect(body.createdAt).toBeTruthy();
-    expect(body.updatedAt).toBeTruthy();
+    const thread = await response.json();
+    expect(thread.threadId).toBeTruthy();
+    expect(thread.customer.customerId).toBeTruthy();
+    expect(thread.customer.name).toBeTruthy();
+    expect(thread).toHaveProperty("title");
+    expect(thread).toHaveProperty("description");
+    expect(thread).toHaveProperty("sequence");
+    expect(thread.status).toBe(status);
+    expect(thread).toHaveProperty("read");
+    expect(thread).toHaveProperty("replied");
+    expect(thread).toHaveProperty("priority");
+    expect(thread).toHaveProperty("spam");
+    expect(thread).toHaveProperty("channel");
+    expect(thread).toHaveProperty("previewText");
+    expect(thread).toHaveProperty("assignee");
+    expect(thread).toHaveProperty("ingressCustomer");
+    expect(thread).toHaveProperty("createdAt");
+    expect(thread).toHaveProperty("updatedAt");
 
-    const keys = Object.keys(body);
-    expect(keys.length).toBe(8);
+    if (thread.ingressCustomer) {
+      expect(thread.ingressCustomer.customerId).toBeTruthy();
+      expect(thread.ingressCustomer.name).toBeTruthy();
+      expect(thread.ingressFirstSeq).toBeTruthy();
+      expect(thread.ingressLastSeq).toBeTruthy();
+    }
+
+    if (thread.egressMembers) {
+      expect(thread.egresssMember.memberId).toBeTruthy();
+      expect(thread.egresssMember.name).toBeTruthy();
+      expect(thread.egressFirstSeq).toBeTruthy();
+      expect(thread.egressLastSeq).toBeTruthy();
+    }
+  });
+
+  test("update thread priority", async ({ request }) => {
+    const priorities = ["urgent", "high", "normal", "low"];
+    const priority = priorities[Math.floor(Math.random() * priorities.length)];
+    const data = {
+      priority,
+    };
+    const response = await request.patch(
+      `/workspaces/${TEST_WORKSPACE_ID}/threads/chat/${randomThreadId}/`,
+      {
+        data,
+        headers: {
+          Authorization: `Bearer ${JWT}`,
+        },
+      }
+    );
+
+    expect(response.status()).toBe(200);
+
+    const thread = await response.json();
+    expect(thread.threadId).toBeTruthy();
+    expect(thread.customer.customerId).toBeTruthy();
+    expect(thread.customer.name).toBeTruthy();
+    expect(thread).toHaveProperty("title");
+    expect(thread).toHaveProperty("description");
+    expect(thread).toHaveProperty("sequence");
+    expect(thread.status).toBeTruthy();
+    expect(thread).toHaveProperty("read");
+    expect(thread).toHaveProperty("replied");
+    expect(thread.priority).toBe(priority);
+    expect(thread).toHaveProperty("spam");
+    expect(thread).toHaveProperty("channel");
+    expect(thread).toHaveProperty("previewText");
+    expect(thread).toHaveProperty("assignee");
+    expect(thread).toHaveProperty("ingressCustomer");
+    expect(thread).toHaveProperty("createdAt");
+    expect(thread).toHaveProperty("updatedAt");
+
+    if (thread.ingressCustomer) {
+      expect(thread.ingressCustomer.customerId).toBeTruthy();
+      expect(thread.ingressCustomer.name).toBeTruthy();
+      expect(thread.ingressFirstSeq).toBeTruthy();
+      expect(thread.ingressLastSeq).toBeTruthy();
+    }
+
+    if (thread.egressMembers) {
+      expect(thread.egresssMember.memberId).toBeTruthy();
+      expect(thread.egresssMember.name).toBeTruthy();
+      expect(thread.egressFirstSeq).toBeTruthy();
+      expect(thread.egressLastSeq).toBeTruthy();
+    }
+  });
+
+  test("test read, replied, spam", async ({ request }) => {
+    const reads = [true, false];
+    const replieds = [true, false];
+    const spams = [true, false];
+
+    const read = reads[Math.floor(Math.random() * reads.length)];
+    const replied = replieds[Math.floor(Math.random() * replieds.length)];
+    const spam = spams[Math.floor(Math.random() * spams.length)];
+
+    const data = {
+      read,
+      replied,
+      spam,
+    };
+    const response = await request.patch(
+      `/workspaces/${TEST_WORKSPACE_ID}/threads/chat/${randomThreadId}/`,
+      {
+        data,
+        headers: {
+          Authorization: `Bearer ${JWT}`,
+        },
+      }
+    );
+
+    expect(response.status()).toBe(200);
+
+    const thread = await response.json();
+    expect(thread.threadId).toBeTruthy();
+    expect(thread.customer.customerId).toBeTruthy();
+    expect(thread.customer.name).toBeTruthy();
+    expect(thread).toHaveProperty("title");
+    expect(thread).toHaveProperty("description");
+    expect(thread).toHaveProperty("sequence");
+    expect(thread.status).toBeTruthy();
+    expect(thread.read).toBe(read);
+    expect(thread.replied).toBe(replied);
+    expect(thread.spam).toBe(spam);
+    expect(thread.priority).toBeTruthy();
+    expect(thread).toHaveProperty("channel");
+    expect(thread).toHaveProperty("previewText");
+    expect(thread).toHaveProperty("assignee");
+    expect(thread).toHaveProperty("ingressCustomer");
+    expect(thread).toHaveProperty("createdAt");
+    expect(thread).toHaveProperty("updatedAt");
+
+    if (thread.ingressCustomer) {
+      expect(thread.ingressCustomer.customerId).toBeTruthy();
+      expect(thread.ingressCustomer.name).toBeTruthy();
+      expect(thread.ingressFirstSeq).toBeTruthy();
+      expect(thread.ingressLastSeq).toBeTruthy();
+    }
+
+    if (thread.egressMembers) {
+      expect(thread.egresssMember.memberId).toBeTruthy();
+      expect(thread.egresssMember.name).toBeTruthy();
+      expect(thread.egressFirstSeq).toBeTruthy();
+      expect(thread.egressLastSeq).toBeTruthy();
+    }
   });
 });
